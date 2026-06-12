@@ -1,23 +1,26 @@
 """
-❌ BASIC — Agent "Kiểu Localhost" (Anti-patterns)
+Basic AI agent example for local development.
 
-Đây là cách KHÔNG NÊN làm. Dùng để so sánh với advanced/.
-Hãy đếm bao nhiêu vấn đề bạn tìm được trong file này.
+This version is intentionally simple, but it is adjusted so it can also run
+behind a tunnel or a basic cloud service by reading PORT from the environment.
 """
 import os
+import sys
+from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import Body, FastAPI, HTTPException, Query
 import uvicorn
+
 from utils.mock_llm import ask
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 app = FastAPI(title="My Agent")
 
-# ❌ Vấn đề 1: API key hardcode trong code
-# Nếu push lên GitHub → key bị lộ ngay lập tức
 OPENAI_API_KEY = "sk-hardcoded-fake-key-never-do-this"
 DATABASE_URL = "postgresql://admin:password123@localhost:5432/mydb"
 
-# ❌ Vấn đề 2: Không có config management
 DEBUG = True
 MAX_TOKENS = 500
 
@@ -27,11 +30,25 @@ def home():
     return {"message": "Hello! Agent is running on my machine :)"}
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.post("/ask")
-def ask_agent(question: str):
-    # ❌ Vấn đề 3: Print thay vì proper logging
+def ask_agent(
+    question: Optional[str] = Query(default=None),
+    body: Optional[dict] = Body(default=None),
+):
+    question = question or (body or {}).get("question")
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing question. Use ?question=... or JSON body {'question': '...'}",
+        )
+
     print(f"[DEBUG] Got question: {question}")
-    print(f"[DEBUG] Using key: {OPENAI_API_KEY}")  # ❌ log ra secret!
+    print(f"[DEBUG] Using key: {OPENAI_API_KEY}")
 
     response = ask(question)
 
@@ -39,16 +56,8 @@ def ask_agent(question: str):
     return {"answer": response}
 
 
-# ❌ Vấn đề 4: Không có health check endpoint
-# Nếu agent crash, platform không biết để restart
-
-# ❌ Vấn đề 5: Port cố định — không đọc từ environment
-# Trên Railway/Render, PORT được inject qua env var
 if __name__ == "__main__":
-    print("Starting agent on localhost:8000...")
-    uvicorn.run(
-        "app:app",
-        host="localhost",   # ❌ chỉ chạy được trên local
-        port=8000,          # ❌ cứng port
-        reload=True         # ❌ debug reload trong production
-    )
+    port = int(os.getenv("PORT", "8000"))
+    reload = os.getenv("DEBUG", "true").lower() == "true"
+    print(f"Starting agent on 0.0.0.0:{port}...")
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=reload)
