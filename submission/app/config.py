@@ -19,6 +19,15 @@ class Settings:
     # LLM
     openai_api_key: str = field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
     llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "gpt-4o-mini"))
+    llm_max_output_tokens: int = field(
+        default_factory=lambda: int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "500"))
+    )
+    llm_system_prompt: str = field(
+        default_factory=lambda: os.getenv(
+            "LLM_SYSTEM_PROMPT",
+            "You are a helpful Vietnamese AI assistant. Answer clearly, concisely, and practically.",
+        )
+    )
 
     # Security
     agent_api_key: str = field(

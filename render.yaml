@@ -1,11 +1,29 @@
 services:
   - type: web
-    name: simple-ai-agent
-    runtime: python
-    rootDir: 01-localhost-vs-production/develop
+    name: nhatquang290904-day12-ai-agent
+    runtime: docker
+    dockerfilePath: ./submission/Dockerfile
+    dockerContext: ./submission
     region: singapore
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    plan: starter
     healthCheckPath: /health
     autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: APP_VERSION
+        value: "1.0.0"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: gpt-4o-mini
+      - key: LLM_MAX_OUTPUT_TOKENS
+        value: "500"
+      - key: AGENT_API_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DAILY_BUDGET_USD
+        value: "5.0"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "20"

@@ -34,6 +34,7 @@ from pydantic import BaseModel, Field
 import uvicorn
 
 from app.config import settings
+from app.llm import ask_llm
 
 # Mock LLM — thay bằng OpenAI/Anthropic khi có key thật
 import sys
@@ -280,7 +281,7 @@ async def ask_agent(
     }))
 
     # Gọi LLM
-    answer = llm_ask(body.question)
+    answer = await ask_llm(body.question, history)
 
     # Ghi lại cost output
     output_tokens = len(answer.split()) * 2
